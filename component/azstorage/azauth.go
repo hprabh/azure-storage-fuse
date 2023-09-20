@@ -44,6 +44,7 @@ type azAuthConfig struct {
 	UseHTTP     bool
 	AccountType AccountType
 	AuthMode    AuthType
+	ArmId       string
 
 	// Key config
 	AccountKey string
@@ -62,6 +63,9 @@ type azAuthConfig struct {
 	ClientSecret            string
 	OAuthTokenFilePath      string
 	ActiveDirectoryEndpoint string
+
+	// IMDS config
+	IMDSEndpoint string
 
 	Endpoint     string
 	AuthResource string
@@ -122,6 +126,12 @@ func getAzAuthBlob(config azAuthConfig) azAuth {
 				azAuthBase: base,
 			},
 		}
+	} else if config.AuthMode == EAuthType.IMDS() {
+		return &azAuthBlobIMDS{
+			azAuthIMDS{
+				azAuthBase: base,
+			},
+		}
 	} else {
 		log.Crit("azAuth::getAzAuthBlob : Auth type %s not supported. Failed to create Auth object", config.AuthMode)
 	}
@@ -151,6 +161,12 @@ func getAzAuthBfs(config azAuthConfig) azAuth {
 	} else if config.AuthMode == EAuthType.SPN() {
 		return &azAuthBfsSPN{
 			azAuthSPN{
+				azAuthBase: base,
+			},
+		}
+	} else if config.AuthMode == EAuthType.IMDS() {
+		return &azAuthBfsIMDS{
+			azAuthIMDS{
 				azAuthBase: base,
 			},
 		}

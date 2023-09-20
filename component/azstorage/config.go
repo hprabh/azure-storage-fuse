@@ -71,6 +71,10 @@ func (AuthType) MSI() AuthType {
 	return AuthType(4)
 }
 
+func (AuthType) IMDS() AuthType {
+	return AuthType(5)
+}
+
 func (a AuthType) String() string {
 	return enum.StringInt(a, reflect.TypeOf(a))
 }
@@ -122,6 +126,7 @@ const DefaultMaxResultsForList int32 = 2
 const (
 	EnvAzStorageAccount               = "AZURE_STORAGE_ACCOUNT"
 	EnvAzStorageAccountType           = "AZURE_STORAGE_ACCOUNT_TYPE"
+	EnvAzStorageAccountArmId          = "AZURE_STORAGE_ACCOUNT_ARM_ID"
 	EnvAzStorageAccessKey             = "AZURE_STORAGE_ACCESS_KEY"
 	EnvAzStorageSasToken              = "AZURE_STORAGE_SAS_TOKEN"
 	EnvAzStorageIdentityClientId      = "AZURE_STORAGE_IDENTITY_CLIENT_ID"
@@ -133,6 +138,7 @@ const (
 	EnvAzStorageSpnOAuthTokenFilePath = "AZURE_OAUTH_TOKEN_FILE"
 	EnvAzStorageAadEndpoint           = "AZURE_STORAGE_AAD_ENDPOINT"
 	EnvAzStorageAuthType              = "AZURE_STORAGE_AUTH_TYPE"
+	EnvAzStorageIMDSEndpoint          = "AZURE_STORAGE_IMDS_ENDPOINT"
 	EnvAzStorageBlobEndpoint          = "AZURE_STORAGE_BLOB_ENDPOINT"
 	EnvHttpProxy                      = "http_proxy"
 	EnvHttpsProxy                     = "https_proxy"
@@ -144,6 +150,7 @@ type AzStorageOptions struct {
 	AccountType             string `config:"type" yaml:"type,omitempty"`
 	UseHTTP                 bool   `config:"use-http" yaml:"use-http,omitempty"`
 	AccountName             string `config:"account-name" yaml:"account-name,omitempty"`
+	ArmId                   string `config:"armid" yaml:"armid,omitempty"`
 	AccountKey              string `config:"account-key" yaml:"account-key,omitempty"`
 	SaSKey                  string `config:"sas" yaml:"sas,omitempty"`
 	ApplicationID           string `config:"appid" yaml:"appid,omitempty"`
@@ -153,6 +160,7 @@ type AzStorageOptions struct {
 	ClientID                string `config:"clientid" yaml:"clientid,omitempty"`
 	ClientSecret            string `config:"clientsecret" yaml:"clientsecret,omitempty"`
 	OAuthTokenFilePath      string `config:"oauth-token-path" yaml:"oauth-token-path,omitempty"`
+	IMDSEndpoint            string `config:"imdsendpoint" yaml:"imdsendpoint,omitempty"`
 	ActiveDirectoryEndpoint string `config:"aadendpoint" yaml:"aadendpoint,omitempty"`
 	Endpoint                string `config:"endpoint" yaml:"endpoint,omitempty"`
 	AuthMode                string `config:"mode" yaml:"mode,omitempty"`
@@ -190,6 +198,7 @@ type AzStorageOptions struct {
 func RegisterEnvVariables() {
 	config.BindEnv("azstorage.account-name", EnvAzStorageAccount)
 	config.BindEnv("azstorage.type", EnvAzStorageAccountType)
+	config.BindEnv("azstorage.armid", EnvAzStorageAccountArmId)
 
 	config.BindEnv("azstorage.account-key", EnvAzStorageAccessKey)
 
@@ -204,6 +213,8 @@ func RegisterEnvVariables() {
 	config.BindEnv("azstorage.oauth-token-path", EnvAzStorageSpnOAuthTokenFilePath)
 
 	config.BindEnv("azstorage.objid", EnvAzStorageIdentityObjectId)
+
+	config.BindEnv("azstorage.imdsendpoint", EnvAzStorageIMDSEndpoint)
 
 	config.BindEnv("azstorage.aadendpoint", EnvAzStorageAadEndpoint)
 
@@ -288,6 +299,12 @@ func ParseAndValidateConfig(az *AzStorage, opt AzStorageOptions) error {
 		return errors.New("account name not provided")
 	}
 	az.stConfig.authConfig.AccountName = opt.AccountName
+
+	if opt.ArmId == "" {
+		log.Err("ParseAndValidateConfig : ARM ID not provided")
+		return errors.New("arm id not provided")
+	}
+	az.stConfig.authConfig.ArmId = opt.ArmId
 
 	// Validate account type property
 	if opt.AccountType == "" {
@@ -444,6 +461,16 @@ func ParseAndValidateConfig(az *AzStorage, opt AzStorageOptions) error {
 		az.stConfig.authConfig.ClientSecret = opt.ClientSecret
 		az.stConfig.authConfig.TenantID = opt.TenantID
 		az.stConfig.authConfig.OAuthTokenFilePath = opt.OAuthTokenFilePath
+	case EAuthType.IMDS():
+		az.stConfig.authConfig.AuthMode = EAuthType.IMDS()
+		if opt.IMDSEndpoint == "" {
+			return errors.New("IMDS endpoint not provided")
+		}
+		if opt.ClientID == "" {
+			return errors.New("client ID not provided")
+		}
+		az.stConfig.authConfig.IMDSEndpoint = opt.IMDSEndpoint
+		az.stConfig.authConfig.ClientID = opt.ClientID
 
 	default:
 		log.Err("ParseAndValidateConfig : Invalid auth mode %s", opt.AuthMode)
