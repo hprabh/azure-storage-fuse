@@ -300,12 +300,6 @@ func ParseAndValidateConfig(az *AzStorage, opt AzStorageOptions) error {
 	}
 	az.stConfig.authConfig.AccountName = opt.AccountName
 
-	if opt.ArmId == "" {
-		log.Err("ParseAndValidateConfig : ARM ID not provided")
-		return errors.New("arm id not provided")
-	}
-	az.stConfig.authConfig.ArmId = opt.ArmId
-
 	// Validate account type property
 	if opt.AccountType == "" {
 		opt.AccountType = "block"
@@ -469,6 +463,12 @@ func ParseAndValidateConfig(az *AzStorage, opt AzStorageOptions) error {
 		if opt.ClientID == "" {
 			return errors.New("client ID not provided")
 		}
+		if opt.ArmId == "" {
+			log.Err("ParseAndValidateConfig : ARM ID not provided")
+			return errors.New("arm id not provided")
+		}
+
+		az.stConfig.authConfig.ArmId = opt.ArmId
 		az.stConfig.authConfig.IMDSEndpoint = opt.IMDSEndpoint
 		az.stConfig.authConfig.ClientID = opt.ClientID
 
