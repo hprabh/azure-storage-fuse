@@ -157,7 +157,6 @@ type AzStorageOptions struct {
 	ApplicationID           string `config:"appid" yaml:"appid,omitempty"`
 	ResourceID              string `config:"resid" yaml:"resid,omitempty"`
 	ObjectID                string `config:"objid" yaml:"objid,omitempty"`
-	TenantID                string `config:"tenantid" yaml:"tenantid,omitempty"`
 	ClientID                string `config:"clientid" yaml:"clientid,omitempty"`
 	ClientSecret            string `config:"clientsecret" yaml:"clientsecret,omitempty"`
 	OAuthTokenFilePath      string `config:"oauth-token-path" yaml:"oauth-token-path,omitempty"`
