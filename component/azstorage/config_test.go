@@ -332,6 +332,34 @@ func (s *configTestSuite) TestAuthModeSPN() {
 	assert.Equal(az.stConfig.authConfig.TenantID, opt.TenantID)
 }
 
+func (s *configTestSuite) TestAuthModeIMDS() {
+	defer config.ResetConfig()
+	assert := assert.New(s.T())
+	az := &AzStorage{}
+	opt := AzStorageOptions{}
+	opt.AccountName = "abcd"
+	opt.Container = "abcd"
+	opt.AuthMode = "imds"
+
+	err := ParseAndValidateConfig(az, opt)
+	assert.NotNil(err)
+	assert.Equal(az.stConfig.authConfig.AuthMode, EAuthType.IMDS())
+	assert.Contains(err.Error(), "IMDS endpoint not provided")
+
+	opt.IMDSEndpoint = "abc"
+	err = ParseAndValidateConfig(az, opt)
+	assert.NotNil(err)
+	assert.Equal(az.stConfig.authConfig.AuthMode, EAuthType.IMDS())
+	assert.Contains(err.Error(), "tenant ID not provided")
+
+	opt.IMDSTenantId = "123"
+	err = ParseAndValidateConfig(az, opt)
+	assert.Nil(err)
+	assert.Equal(az.stConfig.authConfig.IMDSEndpoint, opt.IMDSEndpoint)
+	assert.Equal(az.stConfig.authConfig.ClientID, opt.IMDSClientId)
+	assert.Equal(az.stConfig.authConfig.TenantID, opt.IMDSTenantId)
+}
+
 func (s *configTestSuite) TestOtherFlags() {
 	defer config.ResetConfig()
 	assert := assert.New(s.T())

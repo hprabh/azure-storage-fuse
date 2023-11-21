@@ -44,7 +44,6 @@ type azAuthConfig struct {
 	UseHTTP     bool
 	AccountType AccountType
 	AuthMode    AuthType
-	ArmId       string
 
 	// Key config
 	AccountKey string

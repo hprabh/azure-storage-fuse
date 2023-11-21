@@ -61,14 +61,13 @@ type TokenResponse struct {
 	ExpiresOn   time.Time `json:"expiresOn"`
 }
 
-func (azimds *azAuthIMDS) getTokenFromIdentitySidecar(ResourceId string, ResourceArmId string) (r TokenResponse, err error) {
-	headers := map[string]string{
-		"resource_arm_id": ResourceArmId,
-	}
+func (azimds *azAuthIMDS) getTokenFromIdentitySidecar(resourceId string, tenantId string) (r TokenResponse, err error) {
+	headers := map[string]string{}
 
 	queryParams := url.Values{
-		"resource":   []string{ResourceId},
+		"scope":      []string{resourceId},
 		"apiVersion": []string{"2018-02-01"},
+		"tenantId":   []string{tenantId},
 	}
 
 	httpResponse, err := httpGetRequestWithCustomHeaders(azimds.config.IMDSEndpoint+"/metadata/identity/oauth2/token", queryParams, headers)
@@ -144,7 +143,7 @@ func (azimds *azAuthIMDS) fetchToken(resourceId string) (*TokenResponse, error) 
 	// and does not work in all types of clouds (US, German, China etc).
 
 	// Call Identity sidecar and get the token.
-	token, err := azimds.getTokenFromIdentitySidecar(resourceId, azimds.config.ArmId)
+	token, err := azimds.getTokenFromIdentitySidecar(resourceId, azimds.config.TenantID)
 	return &token, err
 }
 
@@ -155,8 +154,9 @@ type azAuthBlobIMDS struct {
 // GetCredential : Get MSI based credentials for blob
 func (azimds *azAuthBlobIMDS) getCredential() interface{} {
 	// Generate the token based on configured inputs
-
-	token, err := azimds.fetchToken(azure.PublicCloud.ResourceIdentifiers.Storage)
+	storageResourceScope := azure.PublicCloud.ResourceIdentifiers.Storage + ".default"
+	log.Err("In get credential %s", storageResourceScope)
+	token, err := azimds.fetchToken(storageResourceScope)
 	if err != nil {
 		// fmt.Println(token.AccessToken)
 		log.Err("azAuthBlobIMDS::getCredential : Failed to get credential [%s]", err.Error())
@@ -165,7 +165,7 @@ func (azimds *azAuthBlobIMDS) getCredential() interface{} {
 
 	// Using token create the credential object, here also register a call back which refreshes the token
 	tc := azblob.NewTokenCredential(token.AccessToken, func(tc azblob.TokenCredential) time.Duration {
-		newToken, err := azimds.fetchToken(azure.PublicCloud.ResourceIdentifiers.Storage)
+		newToken, err := azimds.fetchToken(storageResourceScope)
 		if err != nil {
 			log.Err("azAuthBlobIMDS::getCredential : Failed to refresh token [%s]", err.Error())
 			return 0
@@ -189,7 +189,8 @@ type azAuthBfsIMDS struct {
 // GetCredential : Get MSI based credentials for datalake
 func (azimds *azAuthBfsIMDS) getCredential() interface{} {
 	// Generate the token based on configured inputs
-	token, err := azimds.fetchToken(azure.PublicCloud.ResourceIdentifiers.Datalake)
+	datalakeresourceScope := azure.PublicCloud.ResourceIdentifiers.Datalake + ".default"
+	token, err := azimds.fetchToken(datalakeresourceScope)
 	if err != nil {
 		// fmt.Println(token.AccessToken)
 		log.Err("azAuthBfsIMDS::getCredential : Failed to get credential [%s]", err.Error())
@@ -198,7 +199,7 @@ func (azimds *azAuthBfsIMDS) getCredential() interface{} {
 
 	// Using token create the credential object, here also register a call back which refreshes the token
 	tc := azbfs.NewTokenCredential(token.AccessToken, func(tc azbfs.TokenCredential) time.Duration {
-		newToken, err := azimds.fetchToken(azure.PublicCloud.ResourceIdentifiers.Datalake)
+		newToken, err := azimds.fetchToken(datalakeresourceScope)
 		if err != nil {
 			log.Err("azAuthBfsIMDS::getCredential : Failed to refresh token [%s]", err.Error())
 			return 0

@@ -126,7 +126,6 @@ const DefaultMaxResultsForList int32 = 2
 const (
 	EnvAzStorageAccount               = "AZURE_STORAGE_ACCOUNT"
 	EnvAzStorageAccountType           = "AZURE_STORAGE_ACCOUNT_TYPE"
-	EnvAzStorageAccountArmId          = "AZURE_STORAGE_ACCOUNT_ARM_ID"
 	EnvAzStorageAccessKey             = "AZURE_STORAGE_ACCESS_KEY"
 	EnvAzStorageSasToken              = "AZURE_STORAGE_SAS_TOKEN"
 	EnvAzStorageIdentityClientId      = "AZURE_STORAGE_IDENTITY_CLIENT_ID"
@@ -139,6 +138,8 @@ const (
 	EnvAzStorageAadEndpoint           = "AZURE_STORAGE_AAD_ENDPOINT"
 	EnvAzStorageAuthType              = "AZURE_STORAGE_AUTH_TYPE"
 	EnvAzStorageIMDSEndpoint          = "AZURE_STORAGE_IMDS_ENDPOINT"
+	EnvAzStorageIMDSClientId          = "AZURE_STORAGE_IMDS_CLIENTID"
+	EnvAzStorageIMDSTenantId          = "AZURE_STORAGE_IMDS_TENANT_ID"
 	EnvAzStorageBlobEndpoint          = "AZURE_STORAGE_BLOB_ENDPOINT"
 	EnvHttpProxy                      = "http_proxy"
 	EnvHttpsProxy                     = "https_proxy"
@@ -150,7 +151,7 @@ type AzStorageOptions struct {
 	AccountType             string `config:"type" yaml:"type,omitempty"`
 	UseHTTP                 bool   `config:"use-http" yaml:"use-http,omitempty"`
 	AccountName             string `config:"account-name" yaml:"account-name,omitempty"`
-	ArmId                   string `config:"armid" yaml:"armid,omitempty"`
+	TenantId                string `config:"tenantId" yaml:"armid,omitempty"`
 	AccountKey              string `config:"account-key" yaml:"account-key,omitempty"`
 	SaSKey                  string `config:"sas" yaml:"sas,omitempty"`
 	ApplicationID           string `config:"appid" yaml:"appid,omitempty"`
@@ -161,6 +162,8 @@ type AzStorageOptions struct {
 	ClientSecret            string `config:"clientsecret" yaml:"clientsecret,omitempty"`
 	OAuthTokenFilePath      string `config:"oauth-token-path" yaml:"oauth-token-path,omitempty"`
 	IMDSEndpoint            string `config:"imdsendpoint" yaml:"imdsendpoint,omitempty"`
+	IMDSTenantId            string `config:"imdstenantid" yaml:"imdstenantid,omitempty"`
+	IMDSClientId            string `config:"imdsclientid" yaml:"imdsclientid,omitempty"`
 	ActiveDirectoryEndpoint string `config:"aadendpoint" yaml:"aadendpoint,omitempty"`
 	Endpoint                string `config:"endpoint" yaml:"endpoint,omitempty"`
 	AuthMode                string `config:"mode" yaml:"mode,omitempty"`
@@ -198,7 +201,6 @@ type AzStorageOptions struct {
 func RegisterEnvVariables() {
 	config.BindEnv("azstorage.account-name", EnvAzStorageAccount)
 	config.BindEnv("azstorage.type", EnvAzStorageAccountType)
-	config.BindEnv("azstorage.armid", EnvAzStorageAccountArmId)
 
 	config.BindEnv("azstorage.account-key", EnvAzStorageAccessKey)
 
@@ -215,6 +217,8 @@ func RegisterEnvVariables() {
 	config.BindEnv("azstorage.objid", EnvAzStorageIdentityObjectId)
 
 	config.BindEnv("azstorage.imdsendpoint", EnvAzStorageIMDSEndpoint)
+	config.BindEnv("azstorage.imdstenantid", EnvAzStorageIMDSTenantId)
+	config.BindEnv("azstorage.imdsclientid", EnvAzStorageIMDSClientId)
 
 	config.BindEnv("azstorage.aadendpoint", EnvAzStorageAadEndpoint)
 
@@ -460,17 +464,13 @@ func ParseAndValidateConfig(az *AzStorage, opt AzStorageOptions) error {
 		if opt.IMDSEndpoint == "" {
 			return errors.New("IMDS endpoint not provided")
 		}
-		if opt.ClientID == "" {
-			return errors.New("client ID not provided")
-		}
-		if opt.ArmId == "" {
-			log.Err("ParseAndValidateConfig : ARM ID not provided")
-			return errors.New("arm id not provided")
+		if opt.IMDSTenantId == "" {
+			return errors.New("tenant ID not provided")
 		}
 
-		az.stConfig.authConfig.ArmId = opt.ArmId
+		az.stConfig.authConfig.TenantID = opt.IMDSTenantId
 		az.stConfig.authConfig.IMDSEndpoint = opt.IMDSEndpoint
-		az.stConfig.authConfig.ClientID = opt.ClientID
+		az.stConfig.authConfig.ClientID = opt.IMDSClientId
 
 	default:
 		log.Err("ParseAndValidateConfig : Invalid auth mode %s", opt.AuthMode)
