@@ -354,6 +354,12 @@ func (s *configTestSuite) TestAuthModeIMDS() {
 
 	opt.IMDSTenantId = "123"
 	err = ParseAndValidateConfig(az, opt)
+	assert.NotNil(err)
+	assert.Equal(az.stConfig.authConfig.AuthMode, EAuthType.IMDS())
+	assert.Contains(err.Error(), "client ID not provided")
+
+	opt.IMDSClientId = "xyz"
+	err = ParseAndValidateConfig(az, opt)
 	assert.Nil(err)
 	assert.Equal(az.stConfig.authConfig.IMDSEndpoint, opt.IMDSEndpoint)
 	assert.Equal(az.stConfig.authConfig.ClientID, opt.IMDSClientId)

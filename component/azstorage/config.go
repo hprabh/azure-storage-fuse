@@ -138,7 +138,7 @@ const (
 	EnvAzStorageAadEndpoint           = "AZURE_STORAGE_AAD_ENDPOINT"
 	EnvAzStorageAuthType              = "AZURE_STORAGE_AUTH_TYPE"
 	EnvAzStorageIMDSEndpoint          = "AZURE_STORAGE_IMDS_ENDPOINT"
-	EnvAzStorageIMDSClientId          = "AZURE_STORAGE_IMDS_CLIENTID"
+	EnvAzStorageIMDSClientId          = "AZURE_STORAGE_IMDS_CLIENT_ID"
 	EnvAzStorageIMDSTenantId          = "AZURE_STORAGE_IMDS_TENANT_ID"
 	EnvAzStorageBlobEndpoint          = "AZURE_STORAGE_BLOB_ENDPOINT"
 	EnvHttpProxy                      = "http_proxy"
@@ -484,6 +484,9 @@ func ParseAndValidateConfig(az *AzStorage, opt AzStorageOptions) error {
 		}
 		if opt.IMDSTenantId == "" {
 			return errors.New("tenant ID not provided")
+		}
+		if opt.IMDSClientId == "" {
+			return errors.New("client ID not provided")
 		}
 
 		az.stConfig.authConfig.TenantID = opt.IMDSTenantId

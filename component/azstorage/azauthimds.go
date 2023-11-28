@@ -61,13 +61,14 @@ type TokenResponse struct {
 	ExpiresOn   time.Time `json:"expiresOn"`
 }
 
-func (azimds *azAuthIMDS) getTokenFromIdentitySidecar(resourceId string, tenantId string) (r TokenResponse, err error) {
+func (azimds *azAuthIMDS) getTokenFromIdentitySidecar(resourceId string, tenantId string, clientId string) (r TokenResponse, err error) {
 	headers := map[string]string{}
 
 	queryParams := url.Values{
 		"scope":      []string{resourceId},
 		"apiVersion": []string{"2018-02-01"},
 		"tenantId":   []string{tenantId},
+		"clientId":   []string{clientId},
 	}
 
 	httpResponse, err := httpGetRequestWithCustomHeaders(azimds.config.IMDSEndpoint+"/metadata/identity/oauth2/token", queryParams, headers)
@@ -143,7 +144,7 @@ func (azimds *azAuthIMDS) fetchToken(resourceId string) (*TokenResponse, error) 
 	// and does not work in all types of clouds (US, German, China etc).
 
 	// Call Identity sidecar and get the token.
-	token, err := azimds.getTokenFromIdentitySidecar(resourceId, azimds.config.TenantID)
+	token, err := azimds.getTokenFromIdentitySidecar(resourceId, azimds.config.TenantID, azimds.config.ClientID)
 	return &token, err
 }
 
